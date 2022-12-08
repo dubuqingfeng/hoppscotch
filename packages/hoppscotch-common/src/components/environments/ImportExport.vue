@@ -382,4 +382,35 @@ const getErrorMessage = (err: GQLError<string>) => {
     }
   }
 }
+const fetchEnvironmentFile = (filepath: string) => {
+  fetch(filepath)
+    .then((response) => response.json())
+    .then(async (data) => {
+      const environments = data
+      if (
+        environments._postman_variable_scope === "environment" ||
+        environments._postman_variable_scope === "globals"
+      ) {
+        importFromPostman(environments)
+      } else if (environments[0]) {
+        const [name, variables] = Object.keys(environments[0])
+        if (name === "name" && variables === "variables") {
+          // Do nothing
+        }
+        if (props.environmentType === "MY_ENV") {
+          replaceEnvironments(environments)
+          fileImported()
+        } else {
+          importToTeams(environments)
+        }
+      } else {
+        failedImport()
+      }
+    })
+}
+
+setTimeout(() => {
+  // 移除所有的 environment
+  fetchEnvironmentFile("http://127.0.0.1:3000/env.json")
+}, 1000)
 </script>

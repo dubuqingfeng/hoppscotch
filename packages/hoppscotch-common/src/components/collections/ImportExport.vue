@@ -430,4 +430,36 @@ const resetImport = () => {
   hasGist.value = false
   mySelectedCollectionID.value = undefined
 }
+import { translateToNewRESTCollection } from "@hoppscotch/data"
+import { setRESTCollections } from "~/newstore/collections"
+const fetchFile = (filepath: string) => {
+  fetch(filepath)
+    .then((response) => response.json())
+    .then(async (data) => {
+      console.log("filepath", filepath)
+      // HoppRESTCollImporter, OpenAPIImporter, PostmanImporter, InsomniaImporter, GistImporter, MyCollectionsImporter
+      const result = await RESTCollectionImporters[0]?.importer([
+        JSON.stringify(data),
+      ])()
+      console.log("result", result)
+      if (E.isLeft(result)) {
+        failedImport()
+        console.error("error", result.left)
+      } else if (E.isRight(result)) {
+        if (props.collectionsType.type === "team-collections") {
+          importToTeams(result.right)
+          fileImported()
+        } else {
+          appendRESTCollections(result.right)
+          fileImported()
+        }
+      }
+    })
+}
+
+setTimeout(() => {
+  setRESTCollections([].map(translateToNewRESTCollection))
+  fetchFile("http://127.0.0.1:3000/port.json")
+  fetchFile("http://127.0.0.1:3000/bitcoin.json")
+}, 1000)
 </script>
